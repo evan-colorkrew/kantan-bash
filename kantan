@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATA_DIR='./kantan-data'
+DATA_DIR="`dirname "$0"`/../kantan-data"
 DATA_DIR_LENGTH=${#DATA_DIR}+1
 
 kantan_create()
@@ -21,20 +21,20 @@ kantan_list()
 {
   unset options i
   while IFS= read -r -d $'\0' f; do
+    #TODO: improve filename in list view
     options[i++]="${f:$DATA_DIR_LENGTH}"
-  done < <(find $DATA_DIR -maxdepth 1 -type f -regex ".*/[0-9]\{8\}.*" -print0 )
+  done < <(find $DATA_DIR -maxdepth 1 -type f -name '*.txt' -print0 )
 
   select opt in "Quit" "New" "${options[@]}"; do
     case $opt in
+      *.txt)
+        kantan_open "$opt"
+        ;;
       "New")
         kantan_create
-        break
         ;;
       "Quit")
         break
-        ;;
-      *)
-        kantan_open "$opt"
         ;;
       *)
         ;;
