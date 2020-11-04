@@ -1,0 +1,45 @@
+#!/bin/bash
+
+DATA_DIR='./kantan-data'
+DATA_DIR_LENGTH=${#DATA_DIR}+1
+
+kantan_create()
+{
+  read -p "Subject: " subject
+  date=`date +'%Y%m%d'`
+  kantan_open "$date-${subject// /-}"
+}
+
+kantan_open()
+{
+  filename="$DATA_DIR/$1"
+  vim +'normal G$o' $filename < `tty` > `tty`
+  ex +'%s#\s\+$##' +'%s#\n\+\%$##' +'wq' $filename
+}
+
+kantan_list()
+{
+  unset options i
+  while IFS= read -r -d $'\0' f; do
+    options[i++]="${f:$DATA_DIR_LENGTH}"
+  done < <(find $DATA_DIR -maxdepth 1 -type f -regex ".*/[0-9]\{8\}.*" -print0 )
+
+  select opt in "Quit" "New" "${options[@]}"; do
+    case $opt in
+      "New")
+        kantan_create
+        break
+        ;;
+      "Quit")
+        break
+        ;;
+      *)
+        kantan_open "$opt"
+        ;;
+      *)
+        ;;
+    esac
+  done
+}
+
+kantan_list
