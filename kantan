@@ -5,14 +5,15 @@ DATA_DIR_LENGTH=${#DATA_DIR}+1
 
 kantan_create()
 {
-  read -p "Subject: " subject
+  #TODO open new file in insert mode and without newline
   date=`date +'%Y%m%d'`
-  kantan_open "$date-${subject// /-}"
+  kantan_open "$date-${1// /-}"
+  kantan_list
 }
 
 kantan_open()
 {
-  filename="$DATA_DIR/$1"
+  filename="$DATA_DIR/${1// /-}.txt"
   vim +'normal G$o' $filename < `tty` > `tty`
   ex +'%s#\s\+$##' +'%s#\n\+\%$##' +'wq' $filename
 }
@@ -20,23 +21,31 @@ kantan_open()
 kantan_list()
 {
   unset options i
-  while IFS= read -r -d $'\0' f; do
-    #TODO: improve filename in list view
-    options[i++]="${f:$DATA_DIR_LENGTH}"
-  done < <(find $DATA_DIR -maxdepth 1 -type f -name '*.txt' -print0 )
+  for file in $(find $DATA_DIR/* -type f | sort --numeric-sort)
+  do
+    option="${file:$DATA_DIR_LENGTH}"
+    option="${option//-/ }"
+    options[i++]="${option//.txt/}"
+  done
 
-  select opt in "Quit" "New" "${options[@]}"; do
-    case $opt in
-      *.txt)
-        kantan_open "$opt"
-        ;;
-      "New")
-        kantan_create
-        ;;
-      "Quit")
-        break
+  PS3="Open (#), quit (q) or create with title: "
+  select option in "${options[@]}"
+  do
+    case $REPLY in
+      *[!0-9]*)
+        if [[ "$REPLY" == "q" ]]
+          then
+            break
+          fi
+          kantan_create "$REPLY"
         ;;
       *)
+        if [[ "$option" != "" ]]
+          then
+            kantan_open "$option"
+          else
+            echo "No option ${REPLY}."
+        fi
         ;;
     esac
   done
